@@ -1,0 +1,97 @@
+<svg width="1280" height="760" viewBox="0 0 1280 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">ContextVC architecture</title>
+  <desc id="desc">ContextVC keeps repository context in .context, compiles it into agent-native projections, exposes local runtime gates, and verifies everything in CI.</desc>
+  <style>
+    .bg { fill: #0b1020; }
+    .panel { fill: #101827; stroke: #334155; stroke-width: 2; }
+    .panel-soft { fill: #0f172a; stroke: #253449; stroke-width: 2; }
+    .green { fill: #22c55e; }
+    .blue { fill: #38bdf8; }
+    .amber { fill: #f59e0b; }
+    .violet { fill: #a78bfa; }
+    .title { fill: #f8fafc; font: 700 34px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .subtitle { fill: #93c5fd; font: 500 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .label { fill: #e5e7eb; font: 700 22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .body { fill: #cbd5e1; font: 500 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .small { fill: #94a3b8; font: 500 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .chip { fill: #172033; stroke: #334155; stroke-width: 1.2; }
+    .arrow { stroke: #60a5fa; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+    .arrow-soft { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrowSoft); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowSoft" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#020617" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+  <path d="M0 126H1280M0 254H1280M0 382H1280M0 510H1280M0 638H1280M160 0V760M320 0V760M480 0V760M640 0V760M800 0V760M960 0V760M1120 0V760" stroke="#111a31" stroke-width="1"/>
+
+  <text x="64" y="70" class="title">ContextVC Architecture</text>
+  <text x="64" y="104" class="subtitle">Git-native memory that can render, review, merge, gate, and verify itself</text>
+
+  <rect x="58" y="150" width="300" height="425" rx="24" class="panel" filter="url(#shadow)"/>
+  <circle cx="92" cy="190" r="8" class="green"/>
+  <text x="112" y="198" class="label">Repository truth</text>
+  <text x="88" y="240" class="body">.context/objects</text>
+  <text x="88" y="266" class="small">constraints, decisions, failures,</text>
+  <text x="88" y="288" class="small">how-tos, codemap, preferences</text>
+  <rect x="86" y="318" width="238" height="42" rx="12" class="chip"/>
+  <text x="106" y="345" class="body">append-only events</text>
+  <rect x="86" y="376" width="238" height="42" rx="12" class="chip"/>
+  <text x="106" y="403" class="body">render.lock</text>
+  <rect x="86" y="434" width="238" height="42" rx="12" class="chip"/>
+  <text x="106" y="461" class="body">schema-checked OCL</text>
+  <text x="88" y="520" class="small">Everything durable lives in Git</text>
+  <text x="88" y="544" class="small">and follows branches and PRs.</text>
+
+  <rect x="490" y="150" width="300" height="425" rx="24" class="panel" filter="url(#shadow)"/>
+  <circle cx="524" cy="190" r="8" class="blue"/>
+  <text x="544" y="198" class="label">Compiler</text>
+  <rect x="522" y="230" width="236" height="46" rx="12" class="chip"/>
+  <text x="548" y="260" class="body">adopt existing rules</text>
+  <rect x="522" y="296" width="236" height="46" rx="12" class="chip"/>
+  <text x="548" y="326" class="body">render projections</text>
+  <rect x="522" y="362" width="236" height="46" rx="12" class="chip"/>
+  <text x="548" y="392" class="body">check drift + schema</text>
+  <rect x="522" y="428" width="236" height="46" rx="12" class="chip"/>
+  <text x="548" y="458" class="body">merge semantics</text>
+  <text x="522" y="520" class="small">The compiler preserves human text</text>
+  <text x="522" y="544" class="small">outside managed blocks.</text>
+
+  <rect x="922" y="150" width="300" height="425" rx="24" class="panel" filter="url(#shadow)"/>
+  <circle cx="956" cy="190" r="8" class="amber"/>
+  <text x="976" y="198" class="label">Local runtime</text>
+  <rect x="954" y="230" width="236" height="46" rx="12" class="chip"/>
+  <text x="980" y="260" class="body">stdio MCP server</text>
+  <rect x="954" y="296" width="236" height="46" rx="12" class="chip"/>
+  <text x="980" y="326" class="body">agent + Git hooks</text>
+  <rect x="954" y="362" width="236" height="46" rx="12" class="chip"/>
+  <text x="980" y="392" class="body">precheck gate</text>
+  <rect x="954" y="428" width="236" height="46" rx="12" class="chip"/>
+  <text x="980" y="458" class="body">proposal review</text>
+  <text x="954" y="520" class="small">No hosted service or source upload</text>
+  <text x="954" y="544" class="small">is required for core flows.</text>
+
+  <rect x="190" y="636" width="900" height="78" rx="22" class="panel-soft"/>
+  <circle cx="226" cy="675" r="8" class="violet"/>
+  <text x="248" y="682" class="label">Agent-native projections</text>
+  <text x="530" y="682" class="body">AGENTS.md · CLAUDE.md · Cursor rules · Copilot · Gemini · Cline</text>
+
+  <path d="M358 362H490" class="arrow"/>
+  <path d="M790 362H922" class="arrow"/>
+  <path d="M640 575V636" class="arrow"/>
+  <path d="M1072 575C1072 612 1030 632 970 636" class="arrow-soft"/>
+  <path d="M922 474C860 606 780 628 696 636" class="arrow-soft"/>
+  <path d="M358 474C434 610 514 628 584 636" class="arrow-soft"/>
+
+  <text x="384" y="340" class="small">source of truth</text>
+  <text x="820" y="340" class="small">runtime checks</text>
+  <text x="666" y="612" class="small">render</text>
+</svg>

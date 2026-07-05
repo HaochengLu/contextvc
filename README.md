@@ -288,29 +288,26 @@ ctx repeatbench --output target/repeatbench-results.jsonl
 
 RepeatBench 用 fixture 验证“已知失败是否被 gate 捕获”，也会检查 false-positive action，避免安全命令被误拦。
 
-## 和常见方案有什么不同
+## 传统记忆管理没有、ContextVC 有的能力
 
-常见方案通常只覆盖其中一块：
+传统记忆管理通常把“记忆”当成一段摘要、一组向量、一份用户偏好，或者某个 agent 私有的历史记录。它能帮助模型想起过去说过什么，但很难把这些记忆变成可验证、可审查、可合并的工程资产。
 
-- 只同步规则文件：能把一份规则复制到多个工具，但没有运行时 gate、写回、review、staleness、merge。
-- 只做私有记忆：记忆通常在用户目录里，不跟随仓库，不进 PR，不方便团队审查。
-- 只做检索：能搜历史，但不能在危险动作发生前确定性拦截。
-- 只记录 session：保留过程，但不把经验沉淀成可 review 的对象。
-- 只靠 prompt：难以证明规则是否过期，也难以在 CI 里检查。
+ContextVC 补上的不是更长的摘要，而是下面这些工程能力：
 
-ContextVC 同时做：
+| 传统记忆管理通常缺少 | ContextVC 的做法 |
+| --- | --- |
+| 记忆不跟随代码仓库 | 所有正式对象保存在 repo 内 `.context/objects/`，随分支、PR、clone 一起流转 |
+| 只能“回忆”，不能“拦截” | `ctx precheck`、MCP 和 hooks 可以在危险命令或敏感路径操作前给出 `warn` / `ask` / `block` |
+| 记忆写入缺少审查 | 失败事件先生成 proposal，必须 `ctx review accept` 后才进入正式知识库 |
+| 记忆不知道代码是否变了 | file/source binding 记录 hash，`ctx check` 能发现 stale binding |
+| 多个工具各写一份规则 | `.context/` 是唯一真相源，`ctx render` 编译到 AGENTS、Claude、Cursor、Copilot、Gemini、Cline 等原生文件 |
+| 只能搜历史，不能证明当前投影正确 | `render.lock`、schema 和 managed block drift 都能在 CI 里检查 |
+| 分支合并时上下文冲突不清楚 | `ctx merge` / `ctx harvest` 会把语义冲突写回对象；冲突约束会 fail-closed |
+| 记忆回滚只能手工删改 | `ctx blame` / `ctx diff` / `ctx revert` 使用 git 语义追踪和回滚上下文对象 |
+| agent 客户端可以伪造上下文事件 | MCP `context_log` 在服务端重建保留字段，并做 secret redaction |
+| 很难测试“记忆是否真的减少重复失败” | `ctx repeatbench` 用 fixture 验证已知失败是否被 gate 捕获，并检查误拦 |
 
-- repo 内 `.context/` 真相源。
-- 多 agent 投影编译。
-- MCP + hooks + git hooks。
-- proposal review 写入闭环。
-- deterministic precheck gate。
-- file/source binding staleness。
-- git-native blame/diff/revert/merge。
-- CI 可验证的 render.lock 和 schema。
-- 本地 RepeatBench。
-
-这些能力组合在一起，目标不是“再写一个 rules 同步器”，而是把 agent 上下文当成和代码一样需要版本、审查、合并、回滚的工程资产。
+所以 ContextVC 不是普通 rules 同步器，也不是对话记录仓库。它把 agent memory 变成 repo 级控制平面：能被版本控制、能被 review、能在动作前参与决策、能在 CI 里证明没有漂移。
 
 ## 开发和验证
 

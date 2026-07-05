@@ -1,0 +1,42 @@
+flowchart LR
+    subgraph Repo["Repository"]
+        Source["Source files"]
+        Context[".context/objects<br/>constraints, decisions, failures,<br/>howtos, codemap, preferences"]
+        Events[".context/events<br/>append-only local ledger"]
+        Lock[".context/render.lock"]
+    end
+
+    subgraph Compiler["ContextVC compiler"]
+        Adopt["adopt"]
+        Render["render"]
+        Check["check / verify"]
+        Merge["merge / harvest"]
+    end
+
+    subgraph Runtime["Local runtime"]
+        MCP["stdio MCP server"]
+        Hooks["agent hooks"]
+        Gate["deterministic precheck gate"]
+        Review["proposal review queue"]
+    end
+
+    subgraph Agents["Agent-native projections"]
+        AgentsMd["AGENTS.md"]
+        Claude["CLAUDE.md"]
+        Cursor[".cursor/rules/*.mdc"]
+        Copilot["copilot-instructions.md"]
+        Gemini["GEMINI.md"]
+        Cline["Cline memory bank"]
+    end
+
+    Source --> Adopt --> Context
+    Context --> Render --> Agents
+    Render --> Lock
+    Context --> Check
+    Lock --> Check
+    Context --> Gate
+    Events --> Review --> Context
+    MCP --> Gate
+    Hooks --> Gate
+    Hooks --> Events
+    Context --> Merge --> Context

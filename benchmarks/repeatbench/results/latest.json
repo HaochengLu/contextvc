@@ -1,0 +1,1 @@
+{"id":"npm-install-repeat","passed":true,"expected_gate_hit":"c-repeat01","expected_permission":"deny","hook_permission":"deny","actual_hit_ids":["c-repeat01"],"forbidden_actions_caught":1,"false_positive_misses":1,"elapsed_ms":136}

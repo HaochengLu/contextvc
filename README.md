@@ -1,56 +1,41 @@
 # ContextVC (`ctx`)
 
-ContextVC 是一个纯开源、Git-native 的 AI coding agent 上下文控制工具。它把项目里的规则、决策、失败经验、操作说明和代码地图保存到仓库内的 `.context/`，再编译成 Claude Code、Cursor、Codex、GitHub Copilot、Gemini、Cline 等工具能直接读取的原生文件。
+ContextVC is a Git-native context control plane for AI coding agents.
 
-一句话：**把“agent 该记住什么、什么时候该拦一下、哪些经验需要 review”变成可版本控制、可审查、可复用的项目资产。**
+It stores project rules, decisions, failure memory, how-tos, preferences, and code maps inside `.context/`, then renders them into the native files used by Claude Code, Cursor, Codex, GitHub Copilot, Gemini, and Cline.
 
-## 解决什么问题
+In one line: **agent memory becomes repo-level infrastructure that can be versioned, reviewed, merged, checked in CI, and enforced before risky actions.**
 
-多人或多 agent 写代码时，经常会出现这些问题：
+[![ContextVC demo video](assets/demo-poster.png)](assets/demo.mp4)
 
-- 每个工具都有自己的记忆或规则文件，互相不同步。
-- 规则写在 `AGENTS.md`、`CLAUDE.md`、Cursor Rules 里，改一处忘三处。
-- Agent 会反复踩同一个坑，例如再次运行禁用命令、再次改错同一块代码。
-- 失败经验只留在对话里，换工具、换机器、换分支后就丢了。
-- 规则和经验没有 review 流程，无法判断是谁写入、为什么写入、是否过期。
-- CI 只能检查代码，不能检查 agent 上下文是否过期或被手改。
+Watch the [1-minute demo video](assets/demo.mp4).
 
-ContextVC 的做法是：仓库内维护一份结构化真相源 `.context/`，所有 agent-facing 文件都由它生成；运行时通过 MCP、hooks 和 git hooks 查询这份真相源。
+## Why This Exists
 
-## 本地优先
+AI coding tools already have many places to put memory: prompts, rule files, chat summaries, vector stores, local preferences, and session logs.
 
-- 核心功能只读写当前仓库和本机配置文件。
-- 不需要 API key。
-- 不上传代码、事件或规则。
-- MCP server 是本地 stdio server。
-- 所有长期上下文都可以通过 git review。
+Those systems help an agent remember, but they usually do not answer the engineering questions a repository needs:
 
-## 功能概览
+- Did this memory go through review?
+- Does it follow the branch and the pull request?
+- Is the generated agent-facing file still in sync?
+- Is the rule stale because the source file changed?
+- Can a known-bad command be stopped before the agent runs it again?
+- Can CI prove the context is healthy?
+- Can two branches merge context without silently losing semantics?
 
-| 能力 | 命令 / 文件 | 说明 |
-| --- | --- | --- |
-| 初始化上下文仓库 | `ctx init` | 创建 `.context/`，生成投影文件和 lockfile |
-| 导入现有规则 | `ctx adopt` | 从 `AGENTS.md`、`CLAUDE.md`、`.cursor/rules/*.mdc` 导入对象 |
-| 代码地图回填 | `ctx backfill` | 从 git history 生成 codemap 对象 |
-| 编译投影 | `ctx render` | 生成各类 agent 原生规则文件，并保留人写区域 |
-| CI 健康检查 | `ctx check` | 检查投影漂移、过期绑定、坏 schema、冲突规则、事件日志损坏 |
-| 项目简报 | `ctx brief` | 输出给 agent 的简短项目上下文 |
-| 运行时检索 | `ctx serve-mcp` | 提供 MCP tools：brief、search、precheck、log、propose、status |
-| Hooks 集成 | `ctx install` | 安装 Claude / Cursor / Codex hooks、MCP 配置和 git hooks |
-| 动作前拦截 | `ctx precheck` | 按路径或命令检查约束、历史失败和 stale hint |
-| 临时静默 gate | `ctx snooze` | 对某个 gate hit 记录本地静默事件 |
-| 失败写回 | `ctx log-event` / `ctx hook stop` | 从失败事件蒸馏出 proposal |
-| 人审队列 | `ctx review` | proposal 经 accept/reject 后才进入正式对象 |
-| 过期校验 | `ctx verify` | 校验对象绑定的文件 hash 或 source hash |
-| 语义合并 | `ctx merge` / `ctx harvest` | 持久化语义冲突，约束冲突会阻断 check/render |
-| 历史追踪 | `ctx log` / `ctx blame` / `ctx diff` / `ctx revert` | 用 git 语义查看、追踪和回滚上下文对象 |
-| 本地诊断 | `ctx doctor` | 检查目录、配置、render.lock、hooks、潜在 secret |
-| 格式规范 | `ctx schema` | 输出 OCL object JSON Schema |
-| 基准验证 | `ctx repeatbench` | 跑 repeat-failure gate 场景，输出 JSON 或 JSONL |
+ContextVC is built for those questions.
 
-## 安装
+## Install
 
-需要 Rust stable 工具链。没有安装 Rust 的话，先按 [rustup](https://rustup.rs/) 官方说明安装。
+Install the tagged release from GitHub:
+
+```bash
+cargo install --locked --git https://github.com/HaochengLu/contextvc.git --tag v0.1.0
+ctx --help
+```
+
+Or clone and install from source:
 
 ```bash
 git clone https://github.com/HaochengLu/contextvc.git
@@ -59,25 +44,21 @@ cargo install --locked --path .
 ctx --help
 ```
 
-也可以不安装，直接使用 release build：
+You need the Rust stable toolchain. If Rust is not installed, install it from [rustup.rs](https://rustup.rs/).
+
+## Quick Start
+
+Inside any repository:
 
 ```bash
-cargo build --release
-./target/release/ctx --help
-```
-
-## 快速开始
-
-进入任意已有项目：
-
-```bash
-cd your-project
 ctx init --install-hooks
 ctx status
 ctx check
 ```
 
-初始化后会生成：
+This creates `.context/`, renders agent-facing files, installs local hook adapters, and writes MCP configuration.
+
+Generated files can include:
 
 ```text
 .context/
@@ -87,113 +68,131 @@ CLAUDE.md
 .github/copilot-instructions.md
 GEMINI.md
 .cline/memory-bank/contextvc.md
+.mcp.json
 ```
 
-`ctx init --install-hooks` 的副作用包括：
+ContextVC is local-first:
 
-- 创建 `.context/` 目录。
-- 写入或合并 agent 投影文件。
-- 写入 `.mcp.json` 和 `.claude/.mcp.json`。
-- 写入 Claude / Cursor / Codex hook adapter。
-- 链式写入 git `pre-commit` 和 `post-merge` hooks。
+- no API key required
+- no hosted service required
+- no source upload
+- local stdio MCP server
+- long-lived context lives in the repo and can be reviewed with Git
 
-这些 hook 安装是幂等的。卸载时可以删除对应的 `contextvc-hook.sh`、`.mcp.json` 条目，以及 git hooks 中 `ctx:begin` / `ctx:end` 管理块。
+## What Traditional Memory Management Does Not Have
 
-如果项目里已经有 `AGENTS.md`、`CLAUDE.md` 或 Cursor Rules：
+Traditional memory management usually treats memory as a summary, a vector record, a user preference, or a private agent history. ContextVC treats memory as a repository control plane.
+
+| Traditional memory usually lacks | ContextVC provides |
+| --- | --- |
+| Memory does not follow the repo | Durable objects live in `.context/objects/` and move with branches, pull requests, clones, and forks |
+| Memory can be recalled but not enforced | `ctx precheck`, MCP, and hooks return `warn`, `ask`, or `block` before risky actions |
+| Memory writes skip review | Runtime learning creates proposals; `ctx review accept` is required before formalizing them |
+| Memory does not know when code changed | file/source bindings store hashes; `ctx check` detects stale bindings |
+| Every agent owns a separate rule file | `.context/` is the source of truth; `ctx render` compiles native files for many agents |
+| Retrieval cannot prove generated files are current | `render.lock`, schema validation, and managed-block drift checks run in CI |
+| Branch conflicts are vague | `ctx merge` and `ctx harvest` persist semantic conflicts; conflicted constraints fail closed |
+| Rollback is manual | `ctx blame`, `ctx diff`, and `ctx revert` use Git semantics for context objects |
+| Clients can spoof event identity | MCP `context_log` rebuilds server-owned fields and redacts secrets |
+| It is hard to measure whether memory prevents repeats | RepeatBench verifies that known failures are caught while safe actions still pass |
+
+## Core Features
+
+| Capability | Command / file | What it does |
+| --- | --- | --- |
+| Initialize context | `ctx init` | Creates `.context/`, projection files, and lockfile |
+| Adopt existing rules | `ctx adopt` | Imports `AGENTS.md`, `CLAUDE.md`, and Cursor rules into objects |
+| Backfill codemap | `ctx backfill` | Builds codemap objects from Git history |
+| Render projections | `ctx render` | Generates native agent files while preserving human-written regions |
+| CI guard | `ctx check` | Detects projection drift, stale bindings, schema errors, conflicts, and bad events |
+| Project brief | `ctx brief` | Prints concise context for an agent task |
+| MCP runtime | `ctx serve-mcp` | Serves local tools for brief, search, precheck, log, propose, and status |
+| Hook install | `ctx install` | Installs Claude / Cursor / Codex hooks, MCP config, and Git hooks |
+| Pre-action gate | `ctx precheck` | Checks commands or paths against constraints and failure memory |
+| Gate snooze | `ctx snooze` | Locally suppresses a specific gate hit |
+| Failure writeback | `ctx log-event` / `ctx hook stop` | Distills runtime failures into proposals |
+| Human review | `ctx review` | Accepts or rejects proposals before they enter the source of truth |
+| Staleness check | `ctx verify` | Validates object bindings against current file/source hashes |
+| Semantic merge | `ctx merge` / `ctx harvest` | Preserves semantic conflicts and blocks conflicted constraints |
+| Git history | `ctx log` / `ctx blame` / `ctx diff` / `ctx revert` | Tracks and rolls back context objects with Git semantics |
+| Diagnostics | `ctx doctor` | Checks config, lockfile, hooks, schema, and possible secrets |
+| Schema | `ctx schema` | Prints or writes the OCL object JSON Schema |
+| Benchmark | `ctx repeatbench` | Runs repeat-failure gate scenarios |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Repo["Repository"]
+        Source["Source files"]
+        Context[".context/objects<br/>constraints, decisions, failures,<br/>howtos, codemap, preferences"]
+        Events[".context/events<br/>append-only local ledger"]
+        Lock[".context/render.lock"]
+    end
+
+    subgraph Compiler["ContextVC compiler"]
+        Adopt["adopt"]
+        Render["render"]
+        Check["check / verify"]
+        Merge["merge / harvest"]
+    end
+
+    subgraph Runtime["Local runtime"]
+        MCP["stdio MCP server"]
+        Hooks["agent hooks"]
+        Gate["deterministic precheck gate"]
+        Review["proposal review queue"]
+    end
+
+    subgraph Agents["Agent-native projections"]
+        AgentsMd["AGENTS.md"]
+        Claude["CLAUDE.md"]
+        Cursor[".cursor/rules/*.mdc"]
+        Copilot["copilot-instructions.md"]
+        Gemini["GEMINI.md"]
+        Cline["Cline memory bank"]
+    end
+
+    Source --> Adopt --> Context
+    Context --> Render --> Agents
+    Render --> Lock
+    Context --> Check
+    Lock --> Check
+    Context --> Gate
+    Events --> Review --> Context
+    MCP --> Gate
+    Hooks --> Gate
+    Hooks --> Events
+    Context --> Merge --> Context
+```
+
+The same diagram is also available in [docs/architecture.mmd](docs/architecture.mmd).
+
+## Three Real Workflows
+
+### Workflow 1: Bootstrap an Existing Repository
+
+Use this when a repository already has agent rules spread across files.
 
 ```bash
+cd your-repo
 ctx init --skip-adopt
 ctx adopt
 ctx render --force
 ctx check
+ctx install all
 ```
 
-生成一个项目简报：
+What happens:
 
-```bash
-ctx brief
-ctx brief --task "修改认证模块"
-```
+- existing agent instructions are imported into `.context/objects/`
+- native projection files are regenerated from one source of truth
+- hooks and MCP config are installed locally
+- CI can run `ctx check` to detect drift
 
-从 git history 自动生成代码地图：
+### Workflow 2: Stop a Repeated Bad Command
 
-```bash
-ctx backfill
-ctx render --force
-ctx check
-```
-
-## 核心概念
-
-### `.context/` 是真相源
-
-所有可长期保存的上下文都放在 `.context/objects/` 下，一条知识一个 Markdown 文件。对象类型包括：
-
-- `constraint`：硬约束或软约束，例如禁用某个命令、某目录必须走特定模式。
-- `decision`：项目决策，例如服务分层、依赖选择、接口约定。
-- `failure`：历史失败经验，例如某命令曾失败、某路径有已知坑。
-- `howto`：操作说明，例如如何修改某模块。
-- `codemap`：代码地图，例如高变更文件、关键入口。
-- `preference`：偏好，例如测试、格式化、提交方式。
-
-对象经过 `ctx render` 后会投影到不同 agent 的原生文件里。
-
-### 人写区和机器区分离
-
-ContextVC 只管理带有 `ctx:begin` / `ctx:end` 标记的 managed block。你可以在生成文件里保留人写说明，`ctx render` 不会覆盖 managed block 之外的内容。
-
-### 先提案，再入库
-
-运行时捕获到失败事件后，ContextVC 不会直接污染正式知识库，而是生成 proposal：
-
-```bash
-ctx review list
-ctx review accept <id>
-ctx review reject <id>
-```
-
-accept 后对象进入 `.context/objects/`，随后重新 render；reject 会留下去重记录，避免同一个失败无限重复出现。
-
-### Gate 是确定性的
-
-`ctx precheck` 不调用模型。它只根据结构化对象、scope、binding 和命令 token 匹配做判断：
-
-```bash
-ctx precheck --path src/auth/session.rs
-ctx precheck --command "npm install"
-```
-
-约束可以是：
-
-- `warn`：提示但允许。
-- `ask`：要求人工确认。
-- `block`：阻断。
-
-静默一个 gate hit：
-
-```bash
-ctx snooze <object-id>
-```
-
-## 常用工作流
-
-### 让 CI 检查上下文是否健康
-
-```bash
-ctx check
-```
-
-`ctx check` 会失败于：
-
-- `.context/VERSION` 或 `render.lock` 缺失。
-- 对象变了但没有重新 render。
-- 投影文件 managed block 被手动改坏。
-- 绑定文件 hash 过期。
-- 对象 schema 字段非法。
-- event JSONL 损坏。
-- 约束处于 conflicted 状态。
-
-### 把历史经验写成约束
+Create a constraint once and let all supported agents consume it.
 
 ```bash
 mkdir -p .context/objects/constraints
@@ -219,97 +218,116 @@ EOF
 
 ctx render --force
 ctx check
-```
-
-之后 agent 或人运行：
-
-```bash
 ctx precheck --command "npm install"
 ```
 
-会得到 block 结果。
+Expected behavior:
 
-### 接入 MCP
+- `ctx render` projects the constraint into agent-native files
+- `ctx precheck` returns a blocking gate hit for `npm install`
+- safe commands that do not match the constraint are not blocked
 
-```bash
-ctx install mcp
-ctx serve-mcp
-```
+### Workflow 3: Turn a Failure Into Reviewed Memory
 
-MCP tools：
-
-- `context_brief`
-- `context_search`
-- `context_precheck`
-- `context_log`
-- `context_propose`
-- `context_status`
-
-`context_log` 会在服务端重新生成 event id、actor 等保留字段，不信任客户端伪造的人类身份。
-
-### 安装 hooks
+Use the review queue instead of letting runtime learning silently mutate the source of truth.
 
 ```bash
-ctx install all
-```
+ctx log-event \
+  --event-type failure \
+  --payload '{"target":"src/parser.rs","action":"cargo test parser","outcome":"failed","evidence":"parser fixture failed"}'
 
-会安装：
-
-- Claude Code hooks
-- Cursor hooks
-- Codex hooks
-- git `pre-commit`
-- git `post-merge`
-- `.mcp.json`
-
-pre-action 类 hook 可把 `block` / `ask` 返回给宿主工具。Cursor / Codex 的阻断类 hook 在 ContextVC 不可用时会 fail-closed，避免静默放行。
-
-### 处理分支合并后的上下文冲突
-
-```bash
-ctx merge
+ctx hook stop
+ctx review list
+ctx review accept <proposal-id>
+ctx render --force
 ctx check
 ```
 
-语义冲突会写回对象状态：
+What happens:
 
-```yaml
-status: conflicted
+- the failure event is appended locally
+- a proposal is generated from repeated or meaningful evidence
+- a human accepts or rejects it
+- accepted memory becomes a formal `.context/objects/` file
+- projections and lockfile are regenerated
+
+## RepeatBench Results
+
+RepeatBench checks whether known repeat failures are caught by the gate while false-positive actions remain safe.
+
+Latest committed summary: [benchmarks/repeatbench/results/latest-summary.json](benchmarks/repeatbench/results/latest-summary.json)
+
+```json
+{
+  "scenarios": 1,
+  "gate_hits": 1,
+  "misses": 0,
+  "repeat_failure_rate": 0.0
+}
 ```
 
-普通对象冲突会 warning；约束冲突会阻断 `ctx check` 和 `ctx render`，直到人处理。
+Raw per-scenario output is stored at [benchmarks/repeatbench/results/latest.json](benchmarks/repeatbench/results/latest.json).
 
-### 运行 RepeatBench
+Run it yourself:
 
 ```bash
 ctx repeatbench --json
-ctx repeatbench --output target/repeatbench-results.jsonl
+ctx repeatbench --json --output benchmarks/repeatbench/results/latest.json
 ```
 
-RepeatBench 用 fixture 验证“已知失败是否被 gate 捕获”，也会检查 false-positive action，避免安全命令被误拦。
+## CI
 
-## 传统记忆管理没有、ContextVC 有的能力
+Use ContextVC as a repository health check:
 
-传统记忆管理通常把“记忆”当成一段摘要、一组向量、一份用户偏好，或者某个 agent 私有的历史记录。它能帮助模型想起过去说过什么，但很难把这些记忆变成可验证、可审查、可合并的工程资产。
+```bash
+ctx check
+```
 
-ContextVC 补上的不是更长的摘要，而是下面这些工程能力：
+The included GitHub Actions workflow runs:
 
-| 传统记忆管理通常缺少 | ContextVC 的做法 |
-| --- | --- |
-| 记忆不跟随代码仓库 | 所有正式对象保存在 repo 内 `.context/objects/`，随分支、PR、clone 一起流转 |
-| 只能“回忆”，不能“拦截” | `ctx precheck`、MCP 和 hooks 可以在危险命令或敏感路径操作前给出 `warn` / `ask` / `block` |
-| 记忆写入缺少审查 | 失败事件先生成 proposal，必须 `ctx review accept` 后才进入正式知识库 |
-| 记忆不知道代码是否变了 | file/source binding 记录 hash，`ctx check` 能发现 stale binding |
-| 多个工具各写一份规则 | `.context/` 是唯一真相源，`ctx render` 编译到 AGENTS、Claude、Cursor、Copilot、Gemini、Cline 等原生文件 |
-| 只能搜历史，不能证明当前投影正确 | `render.lock`、schema 和 managed block drift 都能在 CI 里检查 |
-| 分支合并时上下文冲突不清楚 | `ctx merge` / `ctx harvest` 会把语义冲突写回对象；冲突约束会 fail-closed |
-| 记忆回滚只能手工删改 | `ctx blame` / `ctx diff` / `ctx revert` 使用 git 语义追踪和回滚上下文对象 |
-| agent 客户端可以伪造上下文事件 | MCP `context_log` 在服务端重建保留字段，并做 secret redaction |
-| 很难测试“记忆是否真的减少重复失败” | `ctx repeatbench` 用 fixture 验证已知失败是否被 gate 捕获，并检查误拦 |
+```bash
+cargo fmt --all -- --check
+cargo test --all --locked
+cargo build --release --locked
+target/release/ctx repeatbench --json
+git diff --check
+```
 
-所以 ContextVC 不是普通 rules 同步器，也不是对话记录仓库。它把 agent memory 变成 repo 级控制平面：能被版本控制、能被 review、能在动作前参与决策、能在 CI 里证明没有漂移。
+`ctx check` fails on:
 
-## 开发和验证
+- missing `.context/VERSION` or `render.lock`
+- object changes that were not rendered
+- edited managed blocks
+- stale file/source bindings
+- invalid object schema fields
+- corrupt event JSONL
+- conflicted constraints
+
+## Object Model
+
+ContextVC stores durable knowledge as Markdown files with OCL frontmatter.
+
+Object types:
+
+- `constraint`: hard or soft rule, often enforced by path or command
+- `decision`: architectural or implementation decision
+- `failure`: repeated failure or known pitfall
+- `howto`: task recipe
+- `codemap`: important source area or high-churn file
+- `preference`: style, testing, formatting, or workflow preference
+
+Managed projection files use `ctx:begin` / `ctx:end` blocks. Human-written text outside those blocks is preserved by `ctx render`.
+
+## Local Security Boundaries
+
+- ContextVC reads and writes the current repository and local config files.
+- Events and objects are redacted for common secret patterns before saving.
+- MCP `context_log` does not trust client-supplied actor/id fields.
+- Binding paths reject absolute paths, parent traversal, out-of-repo symlinks, and oversized files.
+- Review accept uses preflight checks and render rollback.
+- Conflicted constraints fail closed.
+
+## Development
 
 ```bash
 cargo fmt --all
@@ -319,82 +337,16 @@ target/release/ctx repeatbench --json --output target/repeatbench-results.jsonl
 git diff --check
 ```
 
-## 常见排错
+## Release
 
-### `render.lock missing`
-
-```bash
-ctx render --force
-ctx check
-```
-
-### `render.lock stale`
-
-对象已经变化，但投影没有重新生成：
+The first public tag is `v0.1.0`.
 
 ```bash
-ctx render --force
-ctx check
+git fetch --tags
+git checkout v0.1.0
+cargo install --locked --path .
 ```
 
-### `content drift`
+## License
 
-投影文件 managed block 被手动改动。想保留改动：
-
-```bash
-ctx adopt --file AGENTS.md
-ctx review list
-```
-
-想恢复机器生成区：
-
-```bash
-ctx render --force
-```
-
-### `stale binding`
-
-对象绑定的文件或 source 变了：
-
-```bash
-ctx verify --mark
-ctx review list
-```
-
-如果变化是预期的，更新对象正文或 binding 后重新 render。
-
-### `conflicted constraint`
-
-约束存在语义冲突，需要人工处理 `.context/objects/constraints/` 中相关对象：
-
-```bash
-ctx merge
-ctx check
-```
-
-release binary smoke：
-
-```bash
-root="$(pwd)"
-tmp="$(mktemp -d)"
-cp -R tests/fixtures/golden-path/. "$tmp"/
-git -C "$tmp" init
-(cd "$tmp" && "$root/target/release/ctx" init --skip-backfill)
-"$root/target/release/ctx" --repo "$tmp" check
-```
-
-## 仓库结构
-
-```text
-src/                         Rust 实现
-tests/integration.rs          端到端测试
-tests/fixtures/golden-path/   初始化和 adopt fixture
-docs/ocl-v0.md                OCL 格式说明
-docs/design.md                架构说明
-docs/schema/                  OCL JSON Schema
-benchmarks/repeatbench/       RepeatBench 场景和 fixture
-```
-
-## 许可证
-
-Apache-2.0。
+Apache-2.0. See [LICENSE](LICENSE).

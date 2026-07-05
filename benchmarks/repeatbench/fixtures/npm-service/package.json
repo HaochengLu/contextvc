@@ -1,0 +1,7 @@
+{
+  "name": "repeatbench-npm-service",
+  "private": true,
+  "scripts": {
+    "test": "echo ok"
+  }
+}

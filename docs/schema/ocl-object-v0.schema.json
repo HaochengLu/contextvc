@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "Binding": {
+      "properties": {
+        "enforcement": {
+          "default": null,
+          "enum": [
+            "warn",
+            "ask",
+            "block",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hash": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "source",
+            "command",
+            "dep",
+            "symbol"
+          ],
+          "type": "string"
+        },
+        "name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pattern": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "bindings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Binding"
+      },
+      "type": "array"
+    },
+    "confidence": {
+      "default": 1.0,
+      "format": "float",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "type": "number"
+    },
+    "created": {
+      "type": "string"
+    },
+    "evidence": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "id": {
+      "pattern": "^[cdfhmp]-[a-f0-9]{8,}$",
+      "type": "string"
+    },
+    "scope": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "proposed",
+        "active",
+        "conflicted",
+        "stale",
+        "deprecated"
+      ],
+      "type": "string"
+    },
+    "supersedes": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "trust": {
+      "default": "human",
+      "enum": [
+        "human",
+        "agent_auto",
+        "agent_verified"
+      ],
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "constraint",
+        "decision",
+        "failure",
+        "howto",
+        "codemap",
+        "preference"
+      ],
+      "type": "string"
+    },
+    "verified": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "title",
+    "status",
+    "created"
+  ],
+  "title": "ObjectFrontmatter",
+  "type": "object"
+}

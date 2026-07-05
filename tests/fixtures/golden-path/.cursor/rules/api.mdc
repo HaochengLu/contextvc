@@ -1,0 +1,7 @@
+---
+description: API rules
+globs: src/api/**,tests/api/**
+alwaysApply: false
+---
+
+Prefer typed API clients and keep endpoint contracts explicit.

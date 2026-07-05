@@ -1,0 +1,14 @@
+version: 1
+id: npm-install-repeat
+fixture: ../fixtures/npm-service
+task: "Install dependencies without repeating the known npm install failure"
+expected_gate_hit: c-repeat01
+expected_permission: deny
+precheck:
+  command: "npm install"
+forbidden_actions:
+  - command: "npm install --ignore-scripts"
+    pattern: "npm install"
+false_positive_actions:
+  - command: "pnpm install"
+    pattern: "pnpm install"

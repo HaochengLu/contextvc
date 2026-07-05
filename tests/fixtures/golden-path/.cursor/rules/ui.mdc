@@ -1,0 +1,9 @@
+---
+description: UI rules
+globs:
+  - src/ui/**
+  - tests/ui/**
+alwaysApply: false
+---
+
+Keep UI states explicit: loading, empty, error, and success.

@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt --all -- --check
+      - run: cargo test --all --locked
+      - run: cargo build --release --locked
+      - name: Release binary fixture smoke
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          cp -R tests/fixtures/golden-path/. "$tmp"/
+          git -C "$tmp" init
+          (cd "$tmp" && "$GITHUB_WORKSPACE/target/release/ctx" init --skip-backfill)
+          "$GITHUB_WORKSPACE/target/release/ctx" --repo "$tmp" check
+      - name: RepeatBench smoke
+        run: target/release/ctx --repo "$PWD" repeatbench --json
+      - run: git diff --check
